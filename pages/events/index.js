@@ -1,10 +1,18 @@
 import React from 'react'
 import EventList from '../../components/events/EventList'
+import { getData } from '../api/hello'
+import SearchEvents from '../../components/ui/Search'
+import { useRouter } from 'next/router'
 
 const Events = (props) => {
+    const router = useRouter()
+    const handleSearch = (year, month) => {
+        router.push(`events/${year}/${month}`)
+    }
 
   return (
     <div>  
+        <SearchEvents onSearch={handleSearch} />
         <EventList items={props.events}/>
     </div>
   )
@@ -14,19 +22,17 @@ export default Events
 
 
 export const getStaticProps = async () => {
-    const data = await fetch('https://next-project-21e99-default-rtdb.firebaseio.com/data.json')
+    const events = await getData()
 
-    const dataJSON = await data.json()
+    console.log(events);
 
-    console.log(dataJSON);
-
-    if (!dataJSON || dataJSON.length === 0) {
+    if (!events.ok || events.data.length === 0) {
         return { notFound: true };
     }
     
       return {
         props: {
-        events: dataJSON
+        events: events.data
         },
         revalidate: 10,
       };

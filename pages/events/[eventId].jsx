@@ -1,5 +1,6 @@
 import React from 'react'
 import EventInfo from '../../components/events/EventInfo'
+import { getData } from '../api/hello'
 
 const Event = (props) => {
     const event = props.loadedEvent
@@ -7,7 +8,6 @@ const Event = (props) => {
     if(!event) return <p>Loading...</p>
     const {date, description, image, title, location} = event
 
-    if(!event) return <p>Loading...</p>
   return (
     <div>
         <EventInfo>
@@ -27,46 +27,39 @@ const Event = (props) => {
 
 export default Event
 
-const getData = async () => {
-    const data = await fetch('https://next-project-21e99-default-rtdb.firebaseio.com/data.json')
-
-    const dataJSON = await data.json()
-    return dataJSON
-}
-
-
-export const getStaticPaths = async() => {
-    const data = await getData()
-    
-    const paths = data.map(event => event.id).map((id) => ({ params: { eventId: id } }))
-
-    return {
-        paths: paths,
-        fallback: true,
-      };
-}
 
 export const getStaticProps = async (context) => {
-
     const { params } = context;
 
   const eventId = params.eventId;
 
-  const data = await getData();
+  const events = await getData();
 
-  const eventData = data.find((event) => event.id === eventId);
+  if (!events.ok || events.data.length === 0) {
+    return { notFound: true };
+}
 
-  console.log(eventData);
+  const eventData = events.data.find(event => event.id === eventId);
 
   if(!eventData) return {
     notFound:true
     }
-  
 
   return {
     props: {
       loadedEvent: eventData,
     },
+    revalidate: 600
   };
 
+}
+
+export const getStaticPaths = async() => {
+    const events = await getData()
+    const paths = events.ok ? events.data.map(event => ({ params: { eventId: event.id } })) : [{params: { eventId: "" }}]
+
+    return {
+        paths: paths,
+        fallback: true,
+    };
 }
